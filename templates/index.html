@@ -1,0 +1,318 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Automated Accounting & Ledger System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .card { border: none !important; box-shadow: none !important; }
+            body { background-color: white !important; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        
+        <!-- Header at Centralized Print Options Dropdown -->
+        <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+            <h2 class="text-primary fw-bold mb-0">Automated Accounting System</h2>
+            
+            <div class="d-flex gap-2">
+                <a href="/export_excel{% if selected_month %}?month={{ selected_month }}{% endif %}" class="btn btn-success btn-lg fw-bold shadow-sm">
+                    📊 I-export sa Excel
+                </a>
+                
+                <div class="dropdown">
+                    <button class="btn btn-secondary btn-lg fw-bold shadow-sm dropdown-toggle" type="button" id="printMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        🖨️ I-print ang Report...
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="printMenuButton">
+                        <li><h6 class="dropdown-header">Ano ang gusto mong i-print?</h6></li>
+                        <li><a class="dropdown-item fw-bold text-success" href="#" onclick="printReport('print_daily_summary', 'Daily Liquidation Summary Report {% if selected_month %}({{ selected_month }}){% endif %}')">📄 Daily Summary Report</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="printReport('print_daily_details', 'Daily Inputs / Liquidation History {% if selected_month %}({{ selected_month }}){% endif %}')">📄 Daily Detailed History</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="printReport('print_seller', 'Seller Ledger Report {% if selected_month %}({{ selected_month }}){% endif %}')">📄 Seller Ledger</a></li>
+                        <li><a class="dropdown-item fw-bold text-info" href="#" onclick="printReport('print_investor', 'Investor Ledger Report {% if selected_month %}({{ selected_month }}){% endif %}')">📄 Investor Room</a></li>
+                        <li><a class="dropdown-item fw-bold text-warning" href="#" onclick="printReport('print_refund', 'Summary of Refunds Report {% if selected_month %}({{ selected_month }}){% endif %}')">📄 Refunds Room</a></li>
+                    </ul>
+                </div>
+            </div> <!-- ITO ANG NAWAWALANG DIV KAYA NASIRA ANG LAYOUT -->
+        </div>
+
+        <!-- Global Monthly Filter Bar -->
+        <div class="card shadow-sm mb-4 bg-white no-print">
+            <div class="card-body py-2">
+                <form method="GET" action="/" class="row align-items-center">
+                    <div class="col-auto fw-bold text-secondary">Filter ayon sa Buwan (Para sa Monthly Report):</div>
+                    <div class="col-auto">
+                        <input type="month" class="form-control" name="month" value="{{ selected_month }}">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-dark btn-sm">I-generate ang Filter</button>
+                        <a href="/" class="btn btn-outline-secondary btn-sm">I-reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs mb-4 no-print" id="accountingTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab">Daily Input / Monthly Report</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="seller-tab" data-bs-toggle="tab" data-bs-target="#seller" type="button" role="tab">Seller Ledger Room</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="investor-tab" data-bs-toggle="tab" data-bs-target="#investor" type="button" role="tab">Investor Room</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="refund-tab" data-bs-toggle="tab" data-bs-target="#refund" type="button" role="tab">Refunds Room</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="accountingTabContent">
+            
+            <!-- 1. DAILY INPUT TAB -->
+            <div class="tab-pane fade show active" id="daily" role="tabpanel">
+                <div class="card shadow-sm mb-4 no-print">
+                    <div class="card-header bg-success text-white fw-bold">Mag-add ng Daily Transaction / Liquidation</div>
+                    <div class="card-body">
+                        <form action="/add_daily" method="POST" class="row g-3">
+                            <div class="col-md-3"><label class="form-label">Liquidation Date</label><input type="date" class="form-control" name="liquidation_date" required></div>
+                            <div class="col-md-3"><label class="form-label">DT No.</label><input type="text" class="form-control" name="dt_no" required></div>
+                            <div class="col-md-6"><label class="form-label">Account Title</label><input type="text" class="form-control" name="account_title" placeholder="hal. 7019 - SALARIES AND WAGES" required></div>
+                            <div class="col-md-4"><label class="form-label">Employee / Sell</label><input type="text" class="form-control" name="employee_sell" required></div>
+                            <div class="col-md-8"><label class="form-label">Particulars</label><input type="text" class="form-control" name="particulars" required></div>
+                            <div class="col-md-4"><label class="form-label">Supplier</label><input type="text" class="form-control" name="supplier"></div>
+                            <div class="col-md-4"><label class="form-label">Address</label><input type="text" class="form-control" name="address"></div>
+                            <div class="col-md-4"><label class="form-label">TIN No.</label><input type="text" class="form-control" name="tin_no"></div>
+                            <div class="col-md-3"><label class="form-label">E. Date</label><input type="date" class="form-control" name="e_date"></div>
+                            <div class="col-md-3"><label class="form-label">E. Ref</label><input type="text" class="form-control" name="e_ref"></div>
+                            <div class="col-md-2"><label class="form-label">Vatable</label><input type="number" step="0.01" class="form-control" name="vatable" value="0"></div>
+                            <div class="col-md-2"><label class="form-label">Input Tax</label><input type="number" step="0.01" class="form-control" name="input_tax" value="0"></div>
+                            <div class="col-md-4"><label class="form-label">Amount</label><input type="number" step="0.01" class="form-control" name="amount" required></div>
+                            <div class="col-md-4"><label class="form-label">OIC</label><input type="text" class="form-control" name="oic" value="Cathy Botio" required></div>
+                            <div class="col-12"><button type="submit" class="btn btn-success">I-save ang Transaksyon</button></div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4 border-success">
+                    <div class="card-header bg-success text-white fw-bold">Buwanang Summary Report (Kabuuan kada Account Title)</div>
+                    <div class="card-body table-responsive" id="print_daily_summary">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr class="table-light"><th>Account Title</th><th>Total Vatable</th><th>Total Input Tax</th><th>Total Amount</th></tr>
+                            </thead>
+                            <tbody>
+                                {% set ns = namespace(tot_amt=0, tot_tax=0, tot_vat=0) %}
+                                {% for s in daily_summary %}
+                                {% set ns.tot_amt = ns.tot_amt + s.total_amount %}
+                                {% set ns.tot_tax = ns.tot_tax + s.total_tax %}
+                                {% set ns.tot_vat = ns.tot_vat + s.total_vatable %}
+                                <tr>
+                                    <td class="fw-bold">{{ s.account_title }}</td>
+                                    <td>₱{{ "%.2f"|format(s.total_vatable) }}</td>
+                                    <td>₱{{ "%.2f"|format(s.total_tax) }}</td>
+                                    <td class="fw-bold text-success">₱{{ "%.2f"|format(s.total_amount) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="4" class="text-center text-muted">Walang datos.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                            {% if daily_summary %}
+                            <tfoot>
+                                <tr class="table-dark">
+                                    <th>KABUUAN (TOTAL):</th><th>₱{{ "%.2f"|format(ns.tot_vat) }}</th><th>₱{{ "%.2f"|format(ns.tot_tax) }}</th><th class="text-warning">₱{{ "%.2f"|format(ns.tot_amt) }}</th>
+                                </tr>
+                            </tfoot>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white fw-bold">Detalye ng Daily Inputs / Liquidations</div>
+                    <div class="card-body table-responsive" id="print_daily_details">
+                        <table class="table table-bordered table-striped text-small">
+                            <thead>
+                                <tr class="table-success"><th>Date</th><th>DT No.</th><th>Account Title</th><th>Employee/Sell</th><th>Particulars</th><th>Supplier</th><th>Vatable</th><th>Input Tax</th><th>Amount</th><th>OIC</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for row in daily_data %}
+                                <tr><td>{{ row.liquidation_date }}</td><td>{{ row.dt_no }}</td><td>{{ row.account_title }}</td><td>{{ row.employee_sell }}</td><td>{{ row.particulars }}</td><td>{{ row.supplier }}</td><td>₱{{ "%.2f"|format(row.vatable) }}</td><td>₱{{ "%.2f"|format(row.input_tax) }}</td><td>₱{{ "%.2f"|format(row.amount) }}</td><td>{{ row.oic }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. SELLER LEDGER TAB -->
+            <div class="tab-pane fade" id="seller" role="tabpanel">
+                <div class="card shadow-sm mb-4 border-primary no-print">
+                    <div class="card-header bg-primary text-white fw-bold">1. Mag-add ng Bagong Seller Profile</div>
+                    <div class="card-body">
+                        <form action="/add_seller_profile" method="POST" class="row g-3">
+                            <div class="col-md-4"><label class="form-label">Seller Name</label><input type="text" class="form-control" name="seller_name" required></div>
+                            <div class="col-md-4"><label class="form-label">Project Name</label><input type="text" class="form-control" name="project_name" required></div>
+                            <div class="col-md-4"><label class="form-label">TCP (Total Contract Price)</label><input type="number" step="0.01" class="form-control" name="tcp" required></div>
+                            <div class="col-12"><button type="submit" class="btn btn-primary">Gawin ang Profile / Folder ng Seller</button></div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4 border-success no-print">
+                    <div class="card-header bg-success text-white fw-bold">2. Magdagdag ng Sunod na Hulog</div>
+                    <div class="card-body">
+                        <form action="/add_seller_payment" method="POST" class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Piliin ang Seller (Folder)</label>
+                                <select class="form-select" name="seller_id" required>
+                                    <option value="" disabled selected>-- Pumili ng Seller --</option>
+                                    {% for s in seller_data %}
+                                    <option value="{{ s.id }}">{{ s.seller_name }} ({{ s.project_name }}) | Bal: ₱{{ "%.2f"|format(s.balance) }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2"><label class="form-label">Date</label><input type="date" class="form-control" name="date" required></div>
+                            <div class="col-md-3"><label class="form-label">Voucher Number</label><input type="text" class="form-control" name="voucher_no"></div>
+                            <div class="col-md-3"><label class="form-label">Particulars</label><input type="text" class="form-control" name="particulars" value="Partial Payment" required></div>
+                            <div class="col-md-4"><label class="form-label">Amount Paid</label><input type="number" step="0.01" class="form-control" name="amount" required></div>
+                            <div class="col-12"><button type="submit" class="btn btn-success">I-save ang Hulog sa Seller</button></div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white fw-bold">Kasaysayan ng mga Transaksyon ng Seller</div>
+                    <div class="card-body table-responsive" id="print_seller">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr class="table-primary"><th>Seller Name</th><th>Project</th><th>TCP</th><th>Date</th><th>Voucher No.</th><th>Particulars</th><th>Amount Paid</th><th>Running Balance</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for row in ledger_history %}
+                                <tr>
+                                    <td>{{ row.seller_name }}</td><td>{{ row.project_name }}</td><td>₱{{ "%.2f"|format(row.tcp) }}</td>
+                                    <td>{{ row.date }}</td><td>{{ row.voucher_no }}</td><td>{{ row.particulars }}</td>
+                                    <td>₱{{ "%.2f"|format(row.amount) }}</td><td class="fw-bold text-danger">₱{{ "%.2f"|format(row.balance) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. INVESTOR ROOM TAB -->
+            <div class="tab-pane fade" id="investor" role="tabpanel">
+                <div class="card shadow-sm mb-4 no-print">
+                    <div class="card-header bg-info text-dark fw-bold">Investor Ledger Entry</div>
+                    <div class="card-body">
+                        <form action="/add_investor" method="POST" class="row g-3">
+                            <div class="col-md-4"><label class="form-label">Investor Name</label><input type="text" class="form-control" name="investor_name" required></div>
+                            <div class="col-md-4"><label class="form-label">Project / Description</label><input type="text" class="form-control" name="project_name" required></div>
+                            <div class="col-md-4"><label class="form-label">Initial Capital / Total</label><input type="number" step="0.01" class="form-control" name="initial_capital" required></div>
+                            <div class="col-md-3"><label class="form-label">Date</label><input type="date" class="form-control" name="date" required></div>
+                            <div class="col-md-3"><label class="form-label">Voucher / Check No.</label><input type="text" class="form-control" name="voucher_no"></div>
+                            <div class="col-md-6"><label class="form-label">Particulars</label><input type="text" class="form-control" name="particulars" value="Partial Check Issued" required></div>
+                            <div class="col-md-6"><label class="form-label">Amount</label><input type="number" step="0.01" class="form-control" name="amount" required></div>
+                            <div class="col-12"><button type="submit" class="btn btn-info text-dark fw-bold">I-save ang Investor Transaction</button></div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white fw-bold">Listahan ng Investor Ledgers</div>
+                    <div class="card-body table-responsive" id="print_investor">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr class="table-info"><th>Investor Name</th><th>Project / Details</th><th>Initial Capital</th><th>Date</th><th>Voucher No.</th><th>Particulars</th><th>Amount</th><th>Running Total/Balance</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for row in investor_data %}
+                                <tr><td>{{ row.investor_name }}</td><td>{{ row.project_name }}</td><td>₱{{ "%.2f"|format(row.initial_capital) }}</td><td>{{ row.date }}</td><td>{{ row.voucher_no }}</td><td>{{ row.particulars }}</td><td>₱{{ "%.2f"|format(row.amount) }}</td><td class="fw-bold text-success">₱{{ "%.2f"|format(row.balance) }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. REFUNDS TAB -->
+            <div class="tab-pane fade" id="refund" role="tabpanel">
+                <div class="card shadow-sm mb-4 no-print">
+                    <div class="card-header bg-warning text-dark fw-bold">Refund Entry Room</div>
+                    <div class="card-body">
+                        <form action="/add_refund" method="POST" class="row g-3">
+                            <div class="col-md-4"><label class="form-label">Client Name</label><input type="text" class="form-control" name="client_name" required></div>
+                            <div class="col-md-4"><label class="form-label">Site</label><input type="text" class="form-control" name="site" required></div>
+                            <div class="col-md-4"><label class="form-label">Total Payment / Refundable</label><input type="number" step="0.01" class="form-control" name="total_payment" required></div>
+                            <div class="col-md-3"><label class="form-label">Monthly Amount</label><input type="number" step="0.01" class="form-control" name="monthly"></div>
+                            <div class="col-md-3"><label class="form-label">Start Date</label><input type="text" class="form-control" name="start_date"></div>
+                            <div class="col-md-6"><label class="form-label">Bank Account Details</label><input type="text" class="form-control" name="bank_account"></div>
+                            <div class="col-md-3"><label class="form-label">Transaction Date</label><input type="date" class="form-control" name="date" required></div>
+                            <div class="col-md-3"><label class="form-label">Amount Paid</label><input type="number" step="0.01" class="form-control" name="amount" required></div>
+                            <div class="col-md-6"><label class="form-label">Mode of Payment</label><input type="text" class="form-control" name="mode_of_payment" value="BANK TRANSFER"></div>
+                            <div class="col-12"><button type="submit" class="btn btn-warning text-dark fw-bold">I-save ang Refund</button></div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white fw-bold">Summary of Refunds</div>
+                    <div class="card-body table-responsive" id="print_refund">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr class="table-warning"><th>Client Name</th><th>Site</th><th>Total Payment</th><th>Monthly</th><th>Date Paid</th><th>Amount</th><th>Balance</th><th>Mode</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for row in refund_data %}
+                                <tr><td>{{ row.client_name }}</td><td>{{ row.site }}</td><td>₱{{ "%.2f"|format(row.total_payment) }}</td><td>₱{{ "%.2f"|format(row.monthly) }}</td><td>{{ row.date }}</td><td>₱{{ "%.2f"|format(row.amount) }}</td><td class="fw-bold text-danger">₱{{ "%.2f"|format(row.balance) }}</td><td>{{ row.mode_of_payment }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT PARA SA SMART PRINT LAGING LANDSCAPE -->
+    <script>
+        function printReport(divId, title) {
+            var printContents = document.getElementById(divId).innerHTML;
+            var printWindow = window.open('', '', 'height=800,width=1000');
+            
+            printWindow.document.write('<html><head><title>' + title + '</title>');
+            printWindow.document.write('<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">');
+            printWindow.document.write('<style>');
+            /* ITO ANG MAG-FO-FORCE NG LANDSCAPE (A4 o Legal 8x13) KAPAG NAG-PRINT */
+            printWindow.document.write('@page { size: landscape; margin: 10mm; }');
+            printWindow.document.write('body { font-family: Arial, sans-serif; padding: 20px; }');
+            printWindow.document.write('h3 { text-align: center; margin-bottom: 20px; font-weight: bold; }');
+            printWindow.document.write('table { width: 100%; border-collapse: collapse; }');
+            printWindow.document.write('th, td { border: 1px solid #000; padding: 8px; font-size: 14px; text-align: left; }');
+            printWindow.document.write('th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }');
+            printWindow.document.write('</style>');
+            printWindow.document.write('</head><body>');
+            
+            printWindow.document.write('<h3>' + title + '</h3>');
+            printWindow.document.write(printContents);
+            printWindow.document.write('</body></html>');
+            
+            printWindow.document.close();
+            
+            setTimeout(function() {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
