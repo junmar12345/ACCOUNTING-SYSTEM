@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_file
 import sqlite3
+import pandas as pd
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -181,26 +183,25 @@ def add_investor():
     conn.commit()
     conn.close()
     return redirect(url_for('index'))
+
 @app.route('/export_excel')
 def export_excel():
     selected_month = request.args.get('month', '')
     conn = sqlite3.connect('accounting_system.db')
     
-    query_daily = "SELECT * FROM daily_inputs"
-    query_seller = "SELECT * FROM seller_ledger"
-    query_investor = "SELECT * FROM investor_ledger"
-    query_refund = "SELECT * FROM refunds"
-    
     if selected_month:
-        query_daily += f" WHERE liquidation_date LIKE '{selected_month}-%'"
-        query_seller += f" WHERE date LIKE '{selected_month}-%'"
-        query_investor += f" WHERE date LIKE '{selected_month}-%'"
-        query_refund += f" WHERE date LIKE '{selected_month}-%'"
-
-    df_daily = pd.read_sql_query(query_daily, conn)
-    df_seller = pd.read_sql_query(query_seller, conn)
-    df_investor = pd.read_sql_query(query_investor, conn)
-    df_refund = pd.read_sql_query(query_refund, conn)
+        # Ligtas na paraan (Parameterized Query sa Pandas)
+        param = (f"{selected_month}%",)
+        df_daily = pd.read_sql_query("SELECT * FROM daily_inputs WHERE liquidation_date LIKE ?", conn, params=param)
+        df_seller = pd.read_sql_query("SELECT * FROM seller_ledger WHERE date LIKE ?", conn, params=param)
+        df_investor = pd.read_sql_query("SELECT * FROM investor_ledger WHERE date LIKE ?", conn, params=param)
+        df_refund = pd.read_sql_query("SELECT * FROM refunds WHERE date LIKE ?", conn, params=param)
+    else:
+        df_daily = pd.read_sql_query("SELECT * FROM daily_inputs", conn)
+        df_seller = pd.read_sql_query("SELECT * FROM seller_ledger", conn)
+        df_investor = pd.read_sql_query("SELECT * FROM investor_ledger", conn)
+        df_refund = pd.read_sql_query("SELECT * FROM refunds", conn)
+        
     conn.close()
 
     output = BytesIO()
@@ -212,6 +213,8 @@ def export_excel():
     
     output.seek(0)
     filename = f"Accounting_Report_{selected_month}.xlsx" if selected_month else "Accounting_Report_All.xlsx"
+    
     return send_file(output, download_name=filename, as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
 if __name__ == '__main__':
     app.run(debug=True)
