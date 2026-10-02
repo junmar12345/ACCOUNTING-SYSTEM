@@ -1,0 +1,28 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+
+# Secrets
+.env
+.env.*
+
+# Local database and backups
+*.db
+*.sqlite
+*.sqlite3
+*backup*.db
+
+# Archives
+*.zip
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
